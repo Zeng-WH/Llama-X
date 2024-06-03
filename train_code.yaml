@@ -1,0 +1,177 @@
+#$schema: https://componentsdk.azureedge.net/jsonschema/DistributedComponent.json
+# Metadata
+name: llamax_training_autocode
+version: 0.0.5
+display_name: llamax_training_autocode
+# type: DistributedComponent
+type: command
+description: Run llamax training on code training data
+tags: {author: v-weihaozeng@microsoft.com}
+is_deterministic: true
+# Interface
+inputs:
+  model_name_or_path:
+    type: path
+    optional: true
+    description: Training model path.
+  data_path:
+    type: path
+    optional: true
+    description: Training dataset path
+  model_max_length:
+    type: integer
+    optional: true
+    default: 2048
+    description: model max length
+  num_nodes:
+    type: integer
+    optional: true
+    description: number of training nodes
+  num_train_epochs:
+    type: integer
+    optional: true
+    default: 3
+    description: number of training epochs
+  per_device_train_batch_size:
+    type: integer
+    optional: true
+    default: 12
+    description: per train batch size
+  per_device_eval_batch_size:
+    type: integer
+    optional: true
+    default: 1
+    description: per eval batch size
+  gradient_accumulation_steps:
+    type: integer
+    optional: true
+    default: 1
+    description: gradient_accumulation_steps
+  evaluation_strategy:
+    type: string
+    optional: true
+    default: "no"
+    description: evaluation_strategy
+  save_strategy:
+    type: string
+    optional: true
+    default: "steps"
+    description: save_strategy
+  save_total_limit:
+    type: integer
+    optional: true
+    default: 7
+    description: save_total_limit
+  learning_rate:
+    type: number
+    optional: true
+    default: 2e-5
+    description: learning_rate
+  weight_decay:
+    type: number
+    optional: true
+    default: 0.0
+    description: learning_rate
+  warmup_steps:
+    type: integer
+    optional: true
+    default: 30
+    description: warmup_steps
+  save_steps:
+    type: integer
+    optional: true
+    default: 300
+    description: warmup_steps
+  logging_steps:
+    type: integer
+    optional: true
+    default: 2
+    description: logging_steps
+  lr_scheduler_type:
+    type: string
+    optional: true
+    default: "cosine"
+    description: lr_scheduler_type
+  fp16:
+    description: Use bfloat16 for the model weights.
+    optional: true
+    default: true
+    type: boolean
+  bf16:
+    description: Use bfloat16 for the model weights.
+    optional: true
+    default: false
+    type: boolean
+  gradient_checkpointing:
+    description: gradient_checkpointing
+    optional: true
+    default: true
+    type: boolean
+  deepspeed:
+    type: path
+    optional: true
+    default: configs/deepspeed_config_transformers4.31.json
+    description: deepspeed configs
+outputs: 
+  output_dir: 
+    description: Path to save the checkpoints
+    type: path
+    optional: true
+meta: 
+  requireGpu: true
+
+# launcher:
+#   type: torch.distributed 
+#   additional_arguments: >  
+#     export HYDRA_FULL_ERROR=1 && wandb login 5e660a4e573b2ded0481ff940adb9a584e350ee9 && python run.py experiment={inputs.exp_names} trainer.devices=8 trainer.num_nodes={inputs.num_nodes} work_dir={outputs.work_dir} +datamodule.cache_dir.stack={inputs.stack_dedup} +datamodule.cache_dir.stackoverflow={inputs.stackoverflow} +datamodule.cache_dir.textbook={inputs.textbook_data} +datamodule.cache_dir.codecontest={inputs.code_contest}
+command: >-
+  deepspeed train_wizardcoder.py
+  $[[--num_nodes ${{inputs.num_nodes}}]]
+  $[[--model_name_or_path ${{inputs.model_name_or_path}}]]
+  $[[--data_path ${{inputs.data_path}}]]
+  $[[--model_max_length ${{inputs.model_max_length}}]]
+  $[[--num_train_epochs ${{inputs.num_train_epochs}}]]
+  $[[--per_device_train_batch_size ${{inputs.per_device_train_batch_size}}]]
+  $[[--per_device_eval_batch_size ${{inputs.per_device_eval_batch_size}}]]
+  $[[--gradient_accumulation_steps ${{inputs.gradient_accumulation_steps}}]]
+  $[[--evaluation_strategy ${{inputs.evaluation_strategy}}]]
+  $[[--save_strategy ${{inputs.save_strategy}}]]
+  $[[--save_steps ${{inputs.save_steps}}]]
+  $[[--save_total_limit ${{inputs.save_total_limit}}]]
+  $[[--learning_rate ${{inputs.learning_rate}}]]
+  $[[--weight_decay ${{inputs.weight_decay}}]]
+  $[[--warmup_steps ${{inputs.warmup_steps}}]]
+  $[[--logging_steps ${{inputs.logging_steps}}]]
+  $[[--lr_scheduler_type ${{inputs.lr_scheduler_type}}]]
+  $[[--gradient_checkpointing ${{inputs.gradient_checkpointing}}]]
+  --deepspeed configs/deepspeed_config_transformers4.31.json 
+  $[[--fp16 ${{inputs.fp16}}]]
+  $[[--bf16 ${{inputs.bf16}}]]
+  --output_dir ${{outputs.output_dir}}
+
+environment:  
+  image: pytorch/pytorch:1.12.0-cuda11.3-cudnn8-devel
+  conda_file:
+    name: project_environment
+    channels:
+      - defaults
+    dependencies:
+      - git
+      - python=3.10.13
+      - packaging
+      - pytest      
+      - pip:        
+        - numpy
+        - rouge_score
+        - fire
+        - openai==0.28.0
+        - transformers==4.34.0        
+        - accelerate        
+        - sentencepiece        
+        - deepspeed==0.10.0
+        - tensorboardX
+        - azureml-core==1.51.0
+        - mlflow
+        - azureml-mlflow
+        - datasets
+  os: Linux
