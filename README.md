@@ -11,8 +11,7 @@ pip install flash-attn==2.3.6 --no-build-isolation
 
 ## Train SFT
 
-SFT和DPO均默认采用Vicuna-1.1模版. model_name_or_path表示模型地址，data_path表示训练文件地址，output_dir表示output地址。deepspeed默认deepseed zero-3 cpu offloading
-
+Both SFT and DPO default to using the Vicuna-1.1 template. model_name_or_path refers to the model address, data_path refers to the training file address, and output_dir refers to the output address. Deepspeed defaults to deepseed zero-3 cpu offloading.
 
 ```
   deepspeed train_freeform_multiturn.py \
